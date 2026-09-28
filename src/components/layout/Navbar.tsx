@@ -3,15 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useEmergency } from '../../context/EmergencyContext';
 import { soundManager } from '../../lib/audio';
 import {
-  HeartPulse,
   Database,
   Volume2,
   VolumeX,
-  User,
-  LogOut,
-  Sparkles,
   ShieldAlert,
-  ChevronDown
+  ChevronDown,
+  KeyRound
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -123,6 +120,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>{getRoleLabel()}</span>
             <ChevronDown className="w-3.5 h-3.5 opacity-60" />
           </button>
+
+          {isSupabaseActive && (
+            <button
+              onClick={onOpenLogin}
+              title="Open Supabase authentication"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-600/20 transition"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Auth</span>
+            </button>
+          )}
 
           {/* User / Login button */}
           {isAuthenticated ? (
