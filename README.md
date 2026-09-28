@@ -48,12 +48,13 @@ To set up your live Supabase database instance:
 
 1. Open your [Supabase Dashboard](https://supabase.com).
 2. Go to the **SQL Editor**.
-3. Run the migration script located at [`/supabase/migrations/001_schema.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/migrations/001_schema.sql). This creates all 13 tables (`users`, `medical_profiles`, `zones`, `hospitals`, `beds`, `ambulances`, `emergencies`, `emergency_status_log`, `dispatch_decisions`, `traffic_factors`, `demand_history`, `zone_time_matrix`, `simulation_runs`), database triggers, and RLS policies.
-4. Run the seed script located at [`/supabase/seed.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/seed.sql). This must be run after the migration, because it truncates and inserts into all 13 AmbuNet tables.
-5. **Enable Realtime Replication**:
+3. If you previously ran an older/partial schema in this Supabase project, run [`/supabase/reset_public_schema.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/reset_public_schema.sql) once first. This deletes public demo tables and starts clean.
+4. Run the schema script located at [`/supabase/schema.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/schema.sql). This creates all 13 tables (`users`, `medical_profiles`, `zones`, `hospitals`, `beds`, `ambulances`, `emergencies`, `emergency_status_log`, `dispatch_decisions`, `traffic_factors`, `demand_history`, `zone_time_matrix`, `simulation_runs`), database triggers, and RLS policies.
+5. Run the seed script located at [`/supabase/seed.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/seed.sql). This must be run after the schema, because it truncates and inserts into all 13 AmbuNet tables.
+6. **Enable Realtime Replication**:
    - Go to **Database -> Replication** in your Supabase dashboard.
    - Ensure tables `ambulances`, `emergencies`, and `beds` are enabled for Realtime broadcasting.
-6. **Provider Setup (Twilio & Google)**:
+7. **Provider Setup (Twilio & Google)**:
    - For Phone OTP: Go to **Authentication -> Providers -> Phone**, select Twilio, and supply your Twilio Account SID, Auth Token, and Messaging Service SID.
    - For Google OAuth: Go to **Authentication -> Providers -> Google**, enable Google provider, and configure Client ID and Client Secret with redirect URI set to your app URL.
 
