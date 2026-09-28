@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole, MedicalProfile } from '../types';
 import { DEMO_USERS } from '../lib/mockData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { logSupabaseError } from '../lib/dbUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +11,9 @@ interface AuthContextType {
   isLoading: boolean;
   isSupabaseActive: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  signUpWithEmail: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   sendOTP: (phoneOrEmail: string) => Promise<{ success: boolean; message: string }>;
   verifyOTP: (phoneOrEmail: string, token: string) => Promise<{ success: boolean; message?: string }>;
   setDemoRole: (role: UserRole, hospitalId?: string) => void;
@@ -110,6 +114,103 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithEmail = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+    if (isSupabaseActive && supabase) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { success: false, message: error.message };
+
+      const authUser = data.user;
+      if (authUser) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+
+        setUser((profile as User | null) || {
+          id: authUser.id,
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+          email: authUser.email,
+          role: (authUser.user_metadata?.role as UserRole) || 'patient'
+        });
+      }
+
+      return { success: true, message: 'Signed in successfully.' };
+    }
+
+    setUser({
+      id: '11111111-1111-1111-1111-111111111111',
+      name: email.split('@')[0] || 'Demo User',
+      email,
+      role: 'patient'
+    });
+    return { success: true, message: 'Demo mode sign in successful.' };
+  };
+
+  const signUpWithEmail = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<{ success: boolean; message: string }> => {
+    if (isSupabaseActive && supabase) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name, role: 'patient' }
+        }
+      });
+
+      if (error) return { success: false, message: error.message };
+
+      if (data.user) {
+        const newUser: User = {
+          id: data.user.id,
+          name,
+          email,
+          role: 'patient',
+          medical_profile: {
+            blood_group: 'O+',
+            allergies: 'None',
+            conditions: 'None'
+          }
+        };
+        setUser(newUser);
+
+        const { error: profileError } = await supabase.from('users').upsert({
+          id: data.user.id,
+          name,
+          email,
+          role: 'patient',
+          updated_at: new Date().toISOString()
+        });
+        logSupabaseError('email signup profile upsert', profileError);
+      }
+
+      return { success: true, message: 'Account created successfully.' };
+    }
+
+    setUser({
+      id: '11111111-1111-1111-1111-111111111111',
+      name,
+      email,
+      role: 'patient'
+    });
+    return { success: true, message: 'Demo account created.' };
+  };
+
+  const resetPassword = async (email: string): Promise<{ success: boolean; message: string }> => {
+    if (isSupabaseActive && supabase) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+      });
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: 'Password reset email sent.' };
+    }
+
+    return { success: true, message: 'Demo mode: password reset email simulated.' };
+  };
+
   const sendOTP = async (phoneOrEmail: string): Promise<{ success: boolean; message: string }> => {
     if (isSupabaseActive && supabase) {
       if (phoneOrEmail.includes('@')) {
@@ -185,12 +286,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updated);
 
     if (isSupabaseActive && supabase) {
-      await supabase.from('users').upsert({
+      const { error } = await supabase.from('users').upsert({
         id: user.id,
         name: user.name,
         role: newRole,
         updated_at: new Date().toISOString()
       });
+      logSupabaseError('user role upsert', error);
     }
   };
 
@@ -206,10 +308,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updatedUser);
 
     if (isSupabaseActive && supabase) {
-      await supabase.from('users').update({
-        medical_profile: updatedUser.medical_profile,
+      const { error } = await supabase.from('medical_profiles').upsert({
+        user_id: user.id,
+        ...updatedUser.medical_profile,
         updated_at: new Date().toISOString()
-      }).eq('id', user.id);
+      });
+      logSupabaseError('medical profile update', error);
     }
   };
 
@@ -231,6 +335,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isSupabaseActive,
         loginWithGoogle,
+        loginWithEmail,
+        signUpWithEmail,
+        resetPassword,
         sendOTP,
         verifyOTP,
         setDemoRole,

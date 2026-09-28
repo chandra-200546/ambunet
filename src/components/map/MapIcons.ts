@@ -9,10 +9,10 @@ export function createAmbulanceIcon(
   let statusColor = '#10B981'; // green for idle
   let ringColor = 'rgba(16, 185, 129, 0.4)';
 
-  if (status === 'dispatched' || status === 'en_route') {
+  if (status === 'en_route_to_patient' || status === 'transporting') {
     statusColor = '#EF4444'; // red for active emergency
     ringColor = 'rgba(239, 68, 68, 0.6)';
-  } else if (status === 'arrived') {
+  } else if (status === 'at_hospital' || status === 'standby') {
     statusColor = '#3B82F6'; // blue for arrived
     ringColor = 'rgba(59, 130, 246, 0.5)';
   } else if (status === 'off_duty') {

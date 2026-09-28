@@ -26,6 +26,7 @@ import { calculateHaversineDistance, calculateHeading } from '../lib/haversine';
 import { getOSRMRoute, getOSRMTableMatrix } from '../lib/osrm';
 import { soundManager } from '../lib/audio';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { createDatabaseId, isUuid, logSupabaseError, toDatabaseUuid } from '../lib/dbUtils';
 import { useAuth } from './AuthContext';
 
 // AI Engines
@@ -363,11 +364,11 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     try {
       const dispatch = await performAIDispatch({ lat: pickupLat, lng: pickupLng }, emergencyType, symptoms, mode);
-      const newEmergencyId = 'em-' + Date.now().toString(36);
+      const newEmergencyId = createDatabaseId();
 
       const newEmergency: Emergency = {
         id: newEmergencyId,
-        patient_id: user?.id || 'u1',
+        patient_id: toDatabaseUuid(user?.id),
         patient_name: patientName || user?.name || 'Rahul Sharma',
         patient_phone: patientPhone || user?.phone || '+91 98765 43210',
         patient_medical_profile: user?.medical_profile,
@@ -379,7 +380,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         pickup_address: pickupAddress,
         assigned_ambulance_id: dispatch.ambulance.id,
         assigned_hospital_id: dispatch.hospital.id,
-        assigned_bed_id: dispatch.bed?.id,
+        assigned_bed_id: toDatabaseUuid(dispatch.bed?.id),
         status: 'assigned',
         predicted_eta_sec: dispatch.predictedEtaSec,
         eta_seconds: dispatch.predictedEtaSec,
@@ -412,7 +413,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setEmergencies(updatedEmergencies);
 
       const newDecision: DispatchDecision = {
-        id: 'dec-' + Date.now(),
+        id: createDatabaseId(),
         emergency_id: newEmergencyId,
         candidates: dispatch.candidates,
         chosen_ambulance_id: dispatch.ambulance.id,
@@ -423,7 +424,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setDispatchDecisions(prev => [newDecision, ...prev]);
 
       const newLog: EmergencyStatusLog = {
-        id: 'log-' + Date.now(),
+        id: createDatabaseId(),
         emergency_id: newEmergencyId,
         status: 'assigned',
         notes: `Dispatch [${mode.toUpperCase()}]: Assigned ${dispatch.ambulance.vehicle_number} to ${pickupAddress}. Reserved ${dispatch.bed?.bed_number || 'bed'} at ${dispatch.hospital.name}. Priority ${dispatch.triage.severity}.`,
@@ -436,10 +437,24 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       const client = supabase;
       if (isSupabaseActive && client) {
-        await client.from('emergencies').insert([newEmergency]);
-        await client.from('ambulances').update({ status: 'en_route_to_patient' }).eq('id', dispatch.ambulance.id);
-        if (dispatch.bed) await client.from('beds').update({ status: 'reserved' }).eq('id', dispatch.bed.id);
-        await client.from('dispatch_decisions').insert([newDecision]);
+        const { error: emergencyError } = await client.from('emergencies').insert([newEmergency]);
+        logSupabaseError('emergency insert', emergencyError);
+
+        if (isUuid(dispatch.ambulance.id)) {
+          const { error: ambulanceError } = await client
+            .from('ambulances')
+            .update({ status: 'en_route_to_patient' })
+            .eq('id', dispatch.ambulance.id);
+          logSupabaseError('ambulance status update', ambulanceError);
+        }
+
+        if (isUuid(dispatch.bed?.id)) {
+          const { error: bedError } = await client.from('beds').update({ status: 'reserved' }).eq('id', dispatch.bed.id);
+          logSupabaseError('bed reservation update', bedError);
+        }
+
+        const { error: decisionError } = await client.from('dispatch_decisions').insert([newDecision]);
+        logSupabaseError('dispatch decision insert', decisionError);
       }
 
       broadcastState(updatedAmbulances, updatedEmergencies, updatedBeds);
@@ -466,9 +481,16 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const client = supabase;
     if (isSupabaseActive && client) {
-      await client.from('emergencies').update({ status: 'en_route_to_patient' }).eq('id', emergencyId);
-      if (em.assigned_ambulance_id) {
-        await client.from('ambulances').update({ status: 'en_route_to_patient' }).eq('id', em.assigned_ambulance_id);
+      if (isUuid(emergencyId)) {
+        const { error } = await client.from('emergencies').update({ status: 'en_route_to_patient' }).eq('id', emergencyId);
+        logSupabaseError('emergency accept update', error);
+      }
+      if (isUuid(em.assigned_ambulance_id)) {
+        const { error } = await client
+          .from('ambulances')
+          .update({ status: 'en_route_to_patient' })
+          .eq('id', em.assigned_ambulance_id);
+        logSupabaseError('ambulance accept update', error);
       }
     }
     broadcastState(updatedAmbulances, updatedEmergencies);
@@ -571,7 +593,10 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const client = supabase;
     if (isSupabaseActive && client) {
-      await client.from('emergencies').update({ status }).eq('id', emergencyId);
+      if (isUuid(emergencyId)) {
+        const { error } = await client.from('emergencies').update({ status }).eq('id', emergencyId);
+        logSupabaseError('emergency status update', error);
+      }
     }
     broadcastState(updatedAmbulances, updatedEmergencies, updatedBeds);
   };
@@ -635,7 +660,10 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setBeds(updatedBeds);
     const client = supabase;
     if (isSupabaseActive && client) {
-      await client.from('beds').update({ status: newStatus }).eq('id', bedId);
+      if (isUuid(bedId)) {
+        const { error } = await client.from('beds').update({ status: newStatus }).eq('id', bedId);
+        logSupabaseError('bed status update', error);
+      }
     }
     broadcastState(undefined, undefined, updatedBeds);
   };
@@ -663,9 +691,18 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const client = supabase;
     if (isSupabaseActive && client) {
-      await client.from('emergencies').update({ status: 'completed' }).eq('id', emergencyId);
-      if (targetBedId) await client.from('beds').update({ status: 'occupied' }).eq('id', targetBedId);
-      if (em.assigned_ambulance_id) await client.from('ambulances').update({ status: 'idle' }).eq('id', em.assigned_ambulance_id);
+      if (isUuid(emergencyId)) {
+        const { error } = await client.from('emergencies').update({ status: 'completed' }).eq('id', emergencyId);
+        logSupabaseError('emergency completion update', error);
+      }
+      if (isUuid(targetBedId)) {
+        const { error } = await client.from('beds').update({ status: 'occupied' }).eq('id', targetBedId);
+        logSupabaseError('bed occupancy update', error);
+      }
+      if (isUuid(em.assigned_ambulance_id)) {
+        const { error } = await client.from('ambulances').update({ status: 'idle' }).eq('id', em.assigned_ambulance_id);
+        logSupabaseError('ambulance completion update', error);
+      }
     }
     broadcastState(updatedAmbulances, updatedEmergencies, updatedBeds);
   };
@@ -862,7 +899,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const improvementPct = Number((((baselineAvg - adaptiveAvg) / baselineAvg) * 100).toFixed(1));
 
     const newRun: SimulationRun = {
-      id: 'sim-' + Date.now(),
+      id: createDatabaseId(),
       run_at: new Date().toISOString(),
       num_emergencies: numEmergencies,
       baseline_avg_sec: baselineAvg,
@@ -877,7 +914,8 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const client = supabase;
     if (isSupabaseActive && client) {
-      await client.from('simulation_runs').insert([newRun]);
+      const { error } = await client.from('simulation_runs').insert([newRun]);
+      logSupabaseError('simulation run insert', error);
     }
 
     return newRun;
