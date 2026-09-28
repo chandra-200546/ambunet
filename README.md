@@ -49,7 +49,7 @@ To set up your live Supabase database instance:
 1. Open your [Supabase Dashboard](https://supabase.com).
 2. Go to the **SQL Editor**.
 3. Run the migration script located at [`/supabase/migrations/001_schema.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/migrations/001_schema.sql). This creates all 13 tables (`users`, `medical_profiles`, `zones`, `hospitals`, `beds`, `ambulances`, `emergencies`, `emergency_status_log`, `dispatch_decisions`, `traffic_factors`, `demand_history`, `zone_time_matrix`, `simulation_runs`), database triggers, and RLS policies.
-4. Run the seed script located at [`/supabase/seed.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/seed.sql). This populates the 8 Bangalore zones, 10 real Bangalore hospitals with exact coordinates, 14 demo ambulances, initial peak traffic factors, and synthetic demand history.
+4. Run the seed script located at [`/supabase/seed.sql`](file:///C:/Users/Chandrashekhar/.gemini/antigravity/scratch/ambunet/supabase/seed.sql). This must be run after the migration, because it truncates and inserts into all 13 AmbuNet tables.
 5. **Enable Realtime Replication**:
    - Go to **Database -> Replication** in your Supabase dashboard.
    - Ensure tables `ambulances`, `emergencies`, and `beds` are enabled for Realtime broadcasting.

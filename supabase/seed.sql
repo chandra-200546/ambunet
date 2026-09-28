@@ -2,6 +2,16 @@
 -- AMBUNET: Seed Data (Bangalore Emergency Response Ecosystem)
 -- Compatible with PostgreSQL UUID Syntax (Hex Digits Only 0-9, a-f)
 -- ==============================================================================
+-- Run supabase/migrations/001_schema.sql before this file.
+-- This seed expects all AmbuNet tables to exist, including simulation_runs,
+-- zone_time_matrix, demand_history, traffic_factors, and dispatch_decisions.
+
+DO $$
+BEGIN
+  IF to_regclass('public.simulation_runs') IS NULL THEN
+    RAISE EXCEPTION 'AmbuNet schema is missing. Run supabase/migrations/001_schema.sql before supabase/seed.sql.';
+  END IF;
+END $$;
 
 TRUNCATE TABLE public.simulation_runs CASCADE;
 TRUNCATE TABLE public.zone_time_matrix CASCADE;
