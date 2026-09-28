@@ -13,7 +13,7 @@ export const BANGALORE_ZONES: Zone[] = [
 
 export const INITIAL_HOSPITALS: Hospital[] = [
   {
-    id: 'h1',
+    id: 'ba000000-0000-0000-0000-000000000001',
     name: 'Victoria Hospital (BMCRI)',
     address: 'Fort Road, Near City Market, Kalasipalyam, Bengaluru',
     lat: 12.9634,
@@ -26,7 +26,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'central_majestic',
   },
   {
-    id: 'h2',
+    id: 'ba000000-0000-0000-0000-000000000002',
     name: 'Bowring & Lady Curzon Hospital',
     address: 'Lady Curzon Rd, Shivaji Nagar, Bengaluru',
     lat: 12.9835,
@@ -39,7 +39,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'central_majestic',
   },
   {
-    id: 'h3',
+    id: 'ba000000-0000-0000-0000-000000000003',
     name: 'NIMHANS Neuro & Trauma Center',
     address: 'Hosur Road, Lakkasandra, Bengaluru',
     lat: 12.9392,
@@ -52,7 +52,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'jayanagar',
   },
   {
-    id: 'h4',
+    id: 'ba000000-0000-0000-0000-000000000004',
     name: 'St. Johns Medical College Hospital',
     address: 'Sarjapur Main Rd, John Nagar, Koramangala, Bengaluru',
     lat: 12.9304,
@@ -65,7 +65,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'koramangala',
   },
   {
-    id: 'h5',
+    id: 'ba000000-0000-0000-0000-000000000005',
     name: 'Manipal Hospital Old Airport Road',
     address: '98 HAL Old Airport Rd, Kodihalli, Bengaluru',
     lat: 12.9577,
@@ -78,7 +78,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'koramangala',
   },
   {
-    id: 'h6',
+    id: 'ba000000-0000-0000-0000-000000000006',
     name: 'Narayana Health City',
     address: '258/A, Bommasandra Industrial Area, Anekal, Bengaluru',
     lat: 12.8123,
@@ -91,7 +91,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'electronic_city',
   },
   {
-    id: 'h7',
+    id: 'ba000000-0000-0000-0000-000000000007',
     name: 'Manipal Hospital Hebbal (Columbia Asia)',
     address: 'Bellary Rd, Near Hebbal Flyover, Bengaluru',
     lat: 13.0478,
@@ -104,7 +104,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'hebbal',
   },
   {
-    id: 'h8',
+    id: 'ba000000-0000-0000-0000-000000000008',
     name: 'Sakra World Hospital',
     address: 'Devarabeesanahalli, Marathahalli ORR, Bengaluru',
     lat: 12.9284,
@@ -117,7 +117,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'whitefield',
   },
   {
-    id: 'h9',
+    id: 'ba000000-0000-0000-0000-000000000009',
     name: 'Fortis Hospital Bannerghatta Road',
     address: '154/9, Bannerghatta Main Rd, Opposite IIMB, Bengaluru',
     lat: 12.8943,
@@ -130,7 +130,7 @@ export const INITIAL_HOSPITALS: Hospital[] = [
     zone_id: 'jayanagar',
   },
   {
-    id: 'h10',
+    id: 'ba000000-0000-0000-0000-000000000010',
     name: 'Apollo Hospitals Bannerghatta',
     address: '154/11, Bannerghatta Main Rd, Opposite IIMB, Bengaluru',
     lat: 12.8958,
@@ -146,37 +146,37 @@ export const INITIAL_HOSPITALS: Hospital[] = [
 
 export const INITIAL_BEDS: Bed[] = [
   // Victoria
-  { id: 'b101', hospital_id: 'h1', bed_number: 'VIC-ICU-01', bed_type: 'ICU', status: 'available' },
-  { id: 'b102', hospital_id: 'h1', bed_number: 'VIC-ICU-02', bed_type: 'ICU', status: 'occupied' },
-  { id: 'b103', hospital_id: 'h1', bed_number: 'VIC-TRM-01', bed_type: 'Trauma', status: 'available' },
-  { id: 'b104', hospital_id: 'h1', bed_number: 'VIC-GEN-01', bed_type: 'General', status: 'available' },
+  { id: 'b101', hospital_id: 'ba000000-0000-0000-0000-000000000001', bed_number: 'VIC-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b102', hospital_id: 'ba000000-0000-0000-0000-000000000001', bed_number: 'VIC-ICU-02', bed_type: 'ICU', status: 'occupied' },
+  { id: 'b103', hospital_id: 'ba000000-0000-0000-0000-000000000001', bed_number: 'VIC-TRM-01', bed_type: 'Trauma', status: 'available' },
+  { id: 'b104', hospital_id: 'ba000000-0000-0000-0000-000000000001', bed_number: 'VIC-GEN-01', bed_type: 'General', status: 'available' },
   // Bowring
-  { id: 'b201', hospital_id: 'h2', bed_number: 'BOW-MAT-01', bed_type: 'Maternity', status: 'available' },
-  { id: 'b202', hospital_id: 'h2', bed_number: 'BOW-GEN-01', bed_type: 'General', status: 'available' },
+  { id: 'b201', hospital_id: 'ba000000-0000-0000-0000-000000000002', bed_number: 'BOW-MAT-01', bed_type: 'Maternity', status: 'available' },
+  { id: 'b202', hospital_id: 'ba000000-0000-0000-0000-000000000002', bed_number: 'BOW-GEN-01', bed_type: 'General', status: 'available' },
   // NIMHANS
-  { id: 'b301', hospital_id: 'h3', bed_number: 'NIM-ICU-01', bed_type: 'ICU', status: 'available' },
-  { id: 'b302', hospital_id: 'h3', bed_number: 'NIM-TRM-01', bed_type: 'Trauma', status: 'available' },
+  { id: 'b301', hospital_id: 'ba000000-0000-0000-0000-000000000003', bed_number: 'NIM-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b302', hospital_id: 'ba000000-0000-0000-0000-000000000003', bed_number: 'NIM-TRM-01', bed_type: 'Trauma', status: 'available' },
   // St. Johns
-  { id: 'b401', hospital_id: 'h4', bed_number: 'STJ-ICU-01', bed_type: 'ICU', status: 'available' },
-  { id: 'b402', hospital_id: 'h4', bed_number: 'STJ-TRM-01', bed_type: 'Trauma', status: 'available' },
+  { id: 'b401', hospital_id: 'ba000000-0000-0000-0000-000000000004', bed_number: 'STJ-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b402', hospital_id: 'ba000000-0000-0000-0000-000000000004', bed_number: 'STJ-TRM-01', bed_type: 'Trauma', status: 'available' },
   // Manipal Old Airport
-  { id: 'b501', hospital_id: 'h5', bed_number: 'MNP-ICU-01', bed_type: 'ICU', status: 'available' },
-  { id: 'b502', hospital_id: 'h5', bed_number: 'MNP-TRM-01', bed_type: 'Trauma', status: 'available' },
+  { id: 'b501', hospital_id: 'ba000000-0000-0000-0000-000000000005', bed_number: 'MNP-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b502', hospital_id: 'ba000000-0000-0000-0000-000000000005', bed_number: 'MNP-TRM-01', bed_type: 'Trauma', status: 'available' },
   // Narayana
-  { id: 'b601', hospital_id: 'h6', bed_number: 'NH-ICU-01', bed_type: 'ICU', status: 'available' },
-  { id: 'b602', hospital_id: 'h6', bed_number: 'NH-TRM-01', bed_type: 'Trauma', status: 'available' },
+  { id: 'b601', hospital_id: 'ba000000-0000-0000-0000-000000000006', bed_number: 'NH-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b602', hospital_id: 'ba000000-0000-0000-0000-000000000006', bed_number: 'NH-TRM-01', bed_type: 'Trauma', status: 'available' },
   // Sakra
-  { id: 'b801', hospital_id: 'h8', bed_number: 'SKR-ICU-01', bed_type: 'ICU', status: 'available' },
-  { id: 'b802', hospital_id: 'h8', bed_number: 'SKR-TRM-01', bed_type: 'Trauma', status: 'available' },
+  { id: 'b801', hospital_id: 'ba000000-0000-0000-0000-000000000008', bed_number: 'SKR-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b802', hospital_id: 'ba000000-0000-0000-0000-000000000008', bed_number: 'SKR-TRM-01', bed_type: 'Trauma', status: 'available' },
   // Fortis & Apollo
-  { id: 'b901', hospital_id: 'h9', bed_number: 'FOR-ICU-01', bed_type: 'ICU', status: 'available' },
-  { id: 'b1001', hospital_id: 'h10', bed_number: 'APO-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b901', hospital_id: 'ba000000-0000-0000-0000-000000000009', bed_number: 'FOR-ICU-01', bed_type: 'ICU', status: 'available' },
+  { id: 'b1001', hospital_id: 'ba000000-0000-0000-0000-000000000010', bed_number: 'APO-ICU-01', bed_type: 'ICU', status: 'available' },
 ];
 
 export const INITIAL_AMBULANCES: Ambulance[] = [
   {
-    id: 'a1',
-    driver_id: 'u2',
+    id: 'ab000000-0000-0000-0000-000000000001',
+    driver_id: '22222222-2222-2222-2222-222222222222',
     driver_name: 'Suresh Kumar',
     driver_phone: '+91 98765 43211',
     vehicle_number: 'KA-01-EA-1008',
@@ -185,10 +185,10 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     heading: 45,
     status: 'idle',
     standby_zone_id: 'central_majestic',
-    hospital_id: 'h1',
+    hospital_id: 'ba000000-0000-0000-0000-000000000001',
   },
   {
-    id: 'a2',
+    id: 'ab000000-0000-0000-0000-000000000002',
     driver_id: 'u-drv-2',
     driver_name: 'Ramesh Gowda',
     driver_phone: '+91 98765 43222',
@@ -198,10 +198,10 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     heading: 120,
     status: 'idle',
     standby_zone_id: 'koramangala',
-    hospital_id: 'h4',
+    hospital_id: 'ba000000-0000-0000-0000-000000000004',
   },
   {
-    id: 'a3',
+    id: 'ab000000-0000-0000-0000-000000000003',
     driver_id: 'u-drv-3',
     driver_name: 'Venkatesh Prasad',
     driver_phone: '+91 98765 43233',
@@ -211,10 +211,10 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     heading: 270,
     status: 'idle',
     standby_zone_id: 'whitefield',
-    hospital_id: 'h8',
+    hospital_id: 'ba000000-0000-0000-0000-000000000008',
   },
   {
-    id: 'a4',
+    id: 'ab000000-0000-0000-0000-000000000004',
     driver_id: 'u-drv-4',
     driver_name: 'Mohammed Aslam',
     driver_phone: '+91 98765 43244',
@@ -224,10 +224,10 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     heading: 90,
     status: 'idle',
     standby_zone_id: 'electronic_city',
-    hospital_id: 'h6',
+    hospital_id: 'ba000000-0000-0000-0000-000000000006',
   },
   {
-    id: 'a5',
+    id: 'ab000000-0000-0000-0000-000000000005',
     driver_id: 'u-drv-5',
     driver_name: 'Manjunath B',
     driver_phone: '+91 98765 43255',
@@ -237,10 +237,10 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     heading: 180,
     status: 'idle',
     standby_zone_id: 'hebbal',
-    hospital_id: 'h7',
+    hospital_id: 'ba000000-0000-0000-0000-000000000007',
   },
   {
-    id: 'a6',
+    id: 'ab000000-0000-0000-0000-000000000006',
     driver_id: 'u-drv-6',
     driver_name: 'Prakash Reddy',
     driver_phone: '+91 98765 43266',
@@ -250,10 +250,10 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     heading: 30,
     status: 'idle',
     standby_zone_id: 'jayanagar',
-    hospital_id: 'h3',
+    hospital_id: 'ba000000-0000-0000-0000-000000000003',
   },
   {
-    id: 'a7',
+    id: 'ab000000-0000-0000-0000-000000000007',
     driver_id: 'u-drv-7',
     driver_name: 'Sunil Naidu',
     driver_phone: '+91 98765 43277',
@@ -265,7 +265,7 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     standby_zone_id: 'yeshwanthpur',
   },
   {
-    id: 'a8',
+    id: 'ab000000-0000-0000-0000-000000000008',
     driver_id: 'u-drv-8',
     driver_name: 'Ganesh Bhat',
     driver_phone: '+91 98765 43288',
@@ -277,7 +277,7 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     standby_zone_id: 'kr_puram',
   },
   {
-    id: 'a9',
+    id: 'ab000000-0000-0000-0000-000000000009',
     driver_id: 'u-drv-9',
     driver_name: 'Dharmendra Yadav',
     driver_phone: '+91 98765 43299',
@@ -289,7 +289,7 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
     standby_zone_id: 'koramangala',
   },
   {
-    id: 'a10',
+    id: 'ab000000-0000-0000-0000-000000000010',
     driver_id: 'u-drv-10',
     driver_name: 'Shiva Kumar',
     driver_phone: '+91 98765 43200',
@@ -304,7 +304,7 @@ export const INITIAL_AMBULANCES: Ambulance[] = [
 
 export const DEMO_USERS: User[] = [
   {
-    id: 'u1',
+    id: '11111111-1111-1111-1111-111111111111',
     name: 'Rahul Sharma (Patient)',
     phone: '+919876543210',
     email: 'patient.demo@ambunet.in',
@@ -318,22 +318,22 @@ export const DEMO_USERS: User[] = [
     },
   },
   {
-    id: 'u2',
+    id: '22222222-2222-2222-2222-222222222222',
     name: 'Suresh Kumar (Driver)',
     phone: '+919876543211',
     email: 'driver.demo@ambunet.in',
     role: 'driver',
   },
   {
-    id: 'u3',
+    id: '33333333-3333-3333-3333-333333333333',
     name: 'Dr. Ananya Rao (Hospital Staff)',
     phone: '+919876543212',
     email: 'hospital.demo@ambunet.in',
     role: 'hospital_staff',
-    hospital_id: 'h1',
+    hospital_id: 'ba000000-0000-0000-0000-000000000001',
   },
   {
-    id: 'u4',
+    id: '44444444-4444-4444-4444-444444444444',
     name: 'Commander Vikram Singh (Admin)',
     phone: '+919876543213',
     email: 'admin.demo@ambunet.in',
@@ -344,7 +344,7 @@ export const DEMO_USERS: User[] = [
 export const INITIAL_EMERGENCIES: Emergency[] = [
   {
     id: 'e1',
-    patient_id: 'u1',
+    patient_id: '11111111-1111-1111-1111-111111111111',
     patient_name: 'Rahul Sharma',
     patient_phone: '+919876543210',
     patient_medical_profile: {
