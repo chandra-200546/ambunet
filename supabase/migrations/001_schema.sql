@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.zones (
 
 -- 2. USERS TABLE
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY,
     name TEXT,
     email TEXT UNIQUE,
     phone TEXT,
@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS public.emergencies (
     patient_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
     patient_name TEXT NOT NULL,
     patient_phone TEXT,
+    patient_medical_profile JSONB DEFAULT '{}'::jsonb,
     emergency_type TEXT NOT NULL,
     severity TEXT NOT NULL DEFAULT 'P2' CHECK (severity IN ('P1', 'P2', 'P3')),
     symptoms JSONB DEFAULT '{}'::jsonb,
@@ -92,6 +93,8 @@ CREATE TABLE IF NOT EXISTS public.emergencies (
     assigned_bed_id UUID REFERENCES public.beds(id) ON DELETE SET NULL,
     predicted_eta_sec INTEGER DEFAULT 0,
     actual_response_sec INTEGER,
+    eta_seconds INTEGER DEFAULT 0,
+    distance_km DOUBLE PRECISION DEFAULT 0.0,
     route_geometry JSONB,
     status TEXT NOT NULL DEFAULT 'requested' CHECK (
         status IN ('requested', 'assigned', 'en_route_to_patient', 'picked_up', 'en_route_to_hospital', 'completed', 'cancelled')
