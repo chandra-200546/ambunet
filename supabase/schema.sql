@@ -210,55 +210,55 @@ INSERT INTO public.users (id, name, phone, email, role, medical_profile) VALUES
 
 -- Insert Hospitals
 INSERT INTO public.hospitals (id, name, address, lat, lng, contact_number, total_capacity) VALUES
-('h1111111-1111-1111-1111-111111111111', 'Metro Central General Hospital', '1001 Potrero Ave, San Francisco, CA', 37.7558, -122.4048, '+1 (415) 206-8000', 60),
-('h2222222-2222-2222-2222-222222222222', 'UCSF Medical Center & Trauma Unit', '505 Parnassus Ave, San Francisco, CA', 37.7631, -122.4580, '+1 (415) 476-1000', 80),
-('h3333333-3333-3333-3333-333333333333', 'St. Mary Regional Heart & Burn Center', '450 Stanyan St, San Francisco, CA', 37.7735, -122.4533, '+1 (415) 668-1000', 45),
-('h4444444-4444-4444-4444-444444444444', 'Bayview Emergency Health Center', '1450 Mendell St, San Francisco, CA', 37.7372, -122.3892, '+1 (415) 822-7500', 35),
-('h5555555-5555-5555-5555-555555555555', 'Presidio LifeCare & Maternity Pavilion', '3601 California St, San Francisco, CA', 37.7865, -122.4528, '+1 (415) 600-6000', 50);
+('c1111111-1111-1111-1111-111111111111', 'Metro Central General Hospital', '1001 Potrero Ave, San Francisco, CA', 37.7558, -122.4048, '+1 (415) 206-8000', 60),
+('c2222222-2222-2222-2222-222222222222', 'UCSF Medical Center & Trauma Unit', '505 Parnassus Ave, San Francisco, CA', 37.7631, -122.4580, '+1 (415) 476-1000', 80),
+('c3333333-3333-3333-3333-333333333333', 'St. Mary Regional Heart & Burn Center', '450 Stanyan St, San Francisco, CA', 37.7735, -122.4533, '+1 (415) 668-1000', 45),
+('c4444444-4444-4444-4444-444444444444', 'Bayview Emergency Health Center', '1450 Mendell St, San Francisco, CA', 37.7372, -122.3892, '+1 (415) 822-7500', 35),
+('c5555555-5555-5555-5555-555555555555', 'Presidio LifeCare & Maternity Pavilion', '3601 California St, San Francisco, CA', 37.7865, -122.4528, '+1 (415) 600-6000', 50);
 
 -- Insert Beds across Hospitals
 -- Metro Central Beds
 INSERT INTO public.beds (hospital_id, bed_number, bed_type, status) VALUES
-('h1111111-1111-1111-1111-111111111111', 'ICU-101', 'ICU', 'available'),
-('h1111111-1111-1111-1111-111111111111', 'ICU-102', 'ICU', 'occupied'),
-('h1111111-1111-1111-1111-111111111111', 'ICU-103', 'ICU', 'available'),
-('h1111111-1111-1111-1111-111111111111', 'TRM-201', 'Trauma', 'available'),
-('h1111111-1111-1111-1111-111111111111', 'TRM-202', 'Trauma', 'available'),
-('h1111111-1111-1111-1111-111111111111', 'GEN-301', 'General', 'available'),
-('h1111111-1111-1111-1111-111111111111', 'GEN-302', 'General', 'occupied'),
-('h1111111-1111-1111-1111-111111111111', 'MAT-401', 'Maternity', 'available');
+('c1111111-1111-1111-1111-111111111111', 'ICU-101', 'ICU', 'available'),
+('c1111111-1111-1111-1111-111111111111', 'ICU-102', 'ICU', 'occupied'),
+('c1111111-1111-1111-1111-111111111111', 'ICU-103', 'ICU', 'available'),
+('c1111111-1111-1111-1111-111111111111', 'TRM-201', 'Trauma', 'available'),
+('c1111111-1111-1111-1111-111111111111', 'TRM-202', 'Trauma', 'available'),
+('c1111111-1111-1111-1111-111111111111', 'GEN-301', 'General', 'available'),
+('c1111111-1111-1111-1111-111111111111', 'GEN-302', 'General', 'occupied'),
+('c1111111-1111-1111-1111-111111111111', 'MAT-401', 'Maternity', 'available');
 
 -- UCSF Beds
 INSERT INTO public.beds (hospital_id, bed_number, bed_type, status) VALUES
-('h2222222-2222-2222-2222-222222222222', 'ICU-01', 'ICU', 'available'),
-('h2222222-2222-2222-2222-222222222222', 'ICU-02', 'ICU', 'available'),
-('h2222222-2222-2222-2222-222222222222', 'TRM-01', 'Trauma', 'available'),
-('h2222222-2222-2222-2222-222222222222', 'TRM-02', 'Trauma', 'occupied'),
-('h2222222-2222-2222-2222-222222222222', 'GEN-01', 'General', 'available'),
-('h2222222-2222-2222-2222-222222222222', 'MAT-01', 'Maternity', 'available');
+('c2222222-2222-2222-2222-222222222222', 'ICU-01', 'ICU', 'available'),
+('c2222222-2222-2222-2222-222222222222', 'ICU-02', 'ICU', 'available'),
+('c2222222-2222-2222-2222-222222222222', 'TRM-01', 'Trauma', 'available'),
+('c2222222-2222-2222-2222-222222222222', 'TRM-02', 'Trauma', 'occupied'),
+('c2222222-2222-2222-2222-222222222222', 'GEN-01', 'General', 'available'),
+('c2222222-2222-2222-2222-222222222222', 'MAT-01', 'Maternity', 'available');
 
 -- St. Mary Beds
 INSERT INTO public.beds (hospital_id, bed_number, bed_type, status) VALUES
-('h3333333-3333-3333-3333-333333333333', 'ICU-A', 'ICU', 'available'),
-('h3333333-3333-3333-3333-333333333333', 'TRM-A', 'Trauma', 'available'),
-('h3333333-3333-3333-3333-333333333333', 'GEN-A', 'General', 'available'),
-('h3333333-3333-3333-3333-333333333333', 'GEN-B', 'General', 'available');
+('c3333333-3333-3333-3333-333333333333', 'ICU-A', 'ICU', 'available'),
+('c3333333-3333-3333-3333-333333333333', 'TRM-A', 'Trauma', 'available'),
+('c3333333-3333-3333-3333-333333333333', 'GEN-A', 'General', 'available'),
+('c3333333-3333-3333-3333-333333333333', 'GEN-B', 'General', 'available');
 
 -- Bayview & Presidio Beds
 INSERT INTO public.beds (hospital_id, bed_number, bed_type, status) VALUES
-('h4444444-4444-4444-4444-444444444444', 'TRM-B1', 'Trauma', 'available'),
-('h4444444-4444-4444-4444-444444444444', 'GEN-B1', 'General', 'available'),
-('h5555555-5555-5555-5555-555555555555', 'MAT-P1', 'Maternity', 'available'),
-('h5555555-5555-5555-5555-555555555555', 'MAT-P2', 'Maternity', 'available'),
-('h5555555-5555-5555-5555-555555555555', 'ICU-P1', 'ICU', 'available');
+('c4444444-4444-4444-4444-444444444444', 'TRM-B1', 'Trauma', 'available'),
+('c4444444-4444-4444-4444-444444444444', 'GEN-B1', 'General', 'available'),
+('c5555555-5555-5555-5555-555555555555', 'MAT-P1', 'Maternity', 'available'),
+('c5555555-5555-5555-5555-555555555555', 'MAT-P2', 'Maternity', 'available'),
+('c5555555-5555-5555-5555-555555555555', 'ICU-P1', 'ICU', 'available');
 
 -- Insert Ambulances
 INSERT INTO public.ambulances (id, driver_id, driver_name, driver_phone, vehicle_number, current_lat, current_lng, status, hospital_id) VALUES
-('a1111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Captain Dave Miller', '+1 (555) 876-5432', 'AMB-901', 37.7749, -122.4194, 'idle', 'h1111111-1111-1111-1111-111111111111'),
-('a2222222-2222-2222-2222-222222222222', NULL, 'Marcus Vance', '+1 (555) 765-4321', 'AMB-404', 37.7600, -122.4350, 'idle', 'h2222222-2222-2222-2222-222222222222'),
-('a3333333-3333-3333-3333-333333333333', NULL, 'Sarah Jenkins', '+1 (555) 654-3210', 'AMB-772', 37.7890, -122.4080, 'idle', 'h3333333-3333-3333-3333-333333333333'),
-('a4444444-4444-4444-4444-444444444444', NULL, 'Carlos Ortiz', '+1 (555) 543-2109', 'AMB-305', 37.7420, -122.4200, 'idle', 'h4444444-4444-4444-4444-444444444444'),
-('a5555555-5555-5555-5555-555555555555', NULL, 'Rachel Kim', '+1 (555) 432-1098', 'AMB-118', 37.7800, -122.4650, 'idle', 'h5555555-5555-5555-5555-555555555555');
+('a1111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Captain Dave Miller', '+1 (555) 876-5432', 'AMB-901', 37.7749, -122.4194, 'idle', 'c1111111-1111-1111-1111-111111111111'),
+('a2222222-2222-2222-2222-222222222222', NULL, 'Marcus Vance', '+1 (555) 765-4321', 'AMB-404', 37.7600, -122.4350, 'idle', 'c2222222-2222-2222-2222-222222222222'),
+('a3333333-3333-3333-3333-333333333333', NULL, 'Sarah Jenkins', '+1 (555) 654-3210', 'AMB-772', 37.7890, -122.4080, 'idle', 'c3333333-3333-3333-3333-333333333333'),
+('a4444444-4444-4444-4444-444444444444', NULL, 'Carlos Ortiz', '+1 (555) 543-2109', 'AMB-305', 37.7420, -122.4200, 'idle', 'c4444444-4444-4444-4444-444444444444'),
+('a5555555-5555-5555-5555-555555555555', NULL, 'Rachel Kim', '+1 (555) 432-1098', 'AMB-118', 37.7800, -122.4650, 'idle', 'c5555555-5555-5555-5555-555555555555');
 
 -- Create Sample Initial Emergency
 INSERT INTO public.emergencies (
@@ -284,3 +284,4 @@ INSERT INTO public.emergencies (
     'Market & Castro St, San Francisco, CA',
     'requested'
 );
+
