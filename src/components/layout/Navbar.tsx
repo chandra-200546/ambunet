@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useEmergency } from '../../context/EmergencyContext';
 import { soundManager } from '../../lib/audio';
 import {
-  Database,
   Volume2,
   VolumeX,
   ShieldAlert,
@@ -19,10 +18,9 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
-  onOpenRoleSelect,
-  onOpenSupabaseConfig
+  onOpenRoleSelect
 }) => {
-  const { user, role, isAuthenticated, logout, isSupabaseActive } = useAuth();
+  const { user, role, isAuthenticated, isSupabaseActive } = useAuth();
   const { emergencies } = useEmergency();
   const [isMuted, setIsMuted] = useState(soundManager.getIsMuted());
 
@@ -55,11 +53,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-[1100] bg-slate-950/85 backdrop-blur-xl border-b border-slate-800 transition-all">
-      {/* Mandatory Academic Disclaimer Banner */}
-      <div className="bg-amber-500/10 border-b border-amber-500/20 py-1 px-4 text-center text-[11px] font-semibold text-amber-300">
-        ⚠️ <strong>Academic prototype — not for real emergencies. Call 108/112.</strong>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 lg:px-8 py-2.5 flex items-center justify-between gap-4">
         {/* Brand & Logo */}
         <div className="flex items-center gap-3">
@@ -98,18 +91,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition"
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-sky-400" />}
-          </button>
-
-          {/* Supabase status pill */}
-          <button
-            onClick={onOpenSupabaseConfig}
-            title="Configure Supabase Database Connection"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold transition"
-          >
-            <Database className={`w-3.5 h-3.5 ${isSupabaseActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-            <span className={isSupabaseActive ? 'text-emerald-300' : 'text-slate-400'}>
-              {isSupabaseActive ? 'Supabase Live' : 'Demo Mode'}
-            </span>
           </button>
 
           {/* Role selector pill */}
