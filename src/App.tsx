@@ -25,6 +25,7 @@ import { DispatchControlPanel } from './components/admin/DispatchControlPanel';
 import { FleetHospitalTable } from './components/admin/FleetHospitalTable';
 import { AnalyticsDashboard } from './components/admin/AnalyticsDashboard';
 import { AmbuNetMap } from './components/map/AmbuNetMap';
+import { ReviewDemoPage } from './components/review/ReviewDemoPage';
 
 // Public Tracking Component
 import { PublicTrackEmergency } from './components/public/PublicTrackEmergency';
@@ -66,22 +67,40 @@ export const App: React.FC = () => {
 
   // Simple Hash Routing for Public Tracking (`/#/track/:id`)
   const [publicEmergencyId, setPublicEmergencyId] = useState<string | null>(null);
+  const [isReviewDemoRoute, setIsReviewDemoRoute] = useState(false);
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
+      const path = window.location.pathname;
       if (hash.startsWith('#/track/')) {
         const id = hash.replace('#/track/', '');
         setPublicEmergencyId(id);
       } else {
         setPublicEmergencyId(null);
       }
+      setIsReviewDemoRoute(path === '/review-demo' || hash === '#/review-demo');
     };
 
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
+    };
   }, []);
+
+  if (isReviewDemoRoute) {
+    return (
+      <ReviewDemoPage
+        onBackToApp={() => {
+          window.history.pushState({}, '', '/');
+          setIsReviewDemoRoute(false);
+        }}
+      />
+    );
+  }
 
   // If public tracking route is active
   if (publicEmergencyId) {
@@ -216,6 +235,27 @@ export const App: React.FC = () => {
             ========================================================================= */}
         {role === 'admin' && (
           <div className="space-y-6 animate-fadeIn">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  Review 2 Engineering Demo
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Run the deterministic Bangalore digital twin scenario, green corridor optimizer, and baseline comparison.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  window.history.pushState({}, '', '/review-demo');
+                  setIsReviewDemoRoute(true);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black shadow-lg shadow-red-600/20 transition"
+              >
+                Open Review Demo
+              </button>
+            </div>
+
             {/* Global City Tactical Live Map */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">

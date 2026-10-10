@@ -25,6 +25,25 @@ npm run dev
 ```
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+### 4. Run the Review 2 Engineering Demo
+```bash
+npm run dev
+```
+Open [http://localhost:5173/review-demo](http://localhost:5173/review-demo), or switch to the Admin role and click **Open Review Demo**.
+
+The Review 2 demo is a deterministic Bangalore/Koramangala digital twin fallback that runs locally without paid APIs. It includes:
+
+- Conventional Dijkstra baseline route
+- A* route candidate
+- Traffic-aware AmbuNet green corridor route
+- Simulated traffic signal priority events
+- Ambulance selection audit
+- Hospital matching from seeded facility data
+- Baseline vs optimized performance comparison
+- CSV export for experiment results
+
+All Review 2 demo data is synthetic or seeded project data. It does not claim live Bengaluru traffic-light control or real emergency-service performance.
+
 ---
 
 ## 🔑 Environment Variables (`.env`)
@@ -64,6 +83,8 @@ To set up your live Supabase database instance:
 
 The Simulation & Benchmark module is located in the **Admin Dashboard** (`AnalyticsDashboard.tsx`).
 
+The dedicated Review 2 route lives at [`/review-demo`](http://localhost:5173/review-demo) and uses `src/simulation/reviewDemoEngine.ts` for graph routing, traffic weighting, ambulance assignment, signal-priority simulation, and exportable metrics.
+
 ### How to Run:
 1. Switch to the **Admin Dispatcher** role using the floating role switcher bar at the bottom.
 2. Scroll to the **Simulation & Benchmark Module**.
@@ -99,3 +120,19 @@ The Simulation & Benchmark module is located in the **Admin Dashboard** (`Analyt
 2. **Bangalore Geo-Grid**: Anchored around 8 primary Bangalore traffic hubs (Whitefield, Electronic City, Hebbal, Koramangala, Jayanagar, Yeshwanthpur, Central/Majestic, KR Puram) and 10 real hospitals (Victoria, NIMHANS, St. John's, Manipal, Sakra, Fortis, Apollo, etc.).
 3. **Client-Side Fallback Execution**: In `VITE_DEMO_MODE=true`, dispatch scoring, triage, and route animations run client-side to ensure 100% runnable, zero-dependency offline demonstration.
 4. **Target vs Measured**: 25% is stated as the benchmark target, while the actual percentage reduction is computed dynamically from simulation results.
+
+---
+
+## 🧭 Architecture & Review Documentation
+
+- Architecture notes and Mermaid diagram: [`docs/architecture.md`](./docs/architecture.md)
+- Supabase schema: [`supabase/schema.sql`](./supabase/schema.sql)
+- Supabase seed data: [`supabase/seed.sql`](./supabase/seed.sql)
+- Review 2 simulation engine: [`src/simulation/reviewDemoEngine.ts`](./src/simulation/reviewDemoEngine.ts)
+- Review 2 UI route: [`src/components/review/ReviewDemoPage.tsx`](./src/components/review/ReviewDemoPage.tsx)
+
+### Known Limitations
+
+- SUMO/TraCI is not bundled in this Vite-only prototype. The current Review 2 implementation is the required lightweight graph-based fallback.
+- Socket.IO and a separate Node/FastAPI service are future architecture targets; current live demo uses Supabase plus client-side deterministic simulation modules.
+- Traffic prediction uses seeded/synthetic assumptions for reproducibility unless connected to real validated datasets.
