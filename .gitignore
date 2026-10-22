@@ -46,3 +46,6 @@ dist-ssr/
 Thumbs.db
 .vercel
 supabase/.temp/
+ml/model.joblib
+__pycache__/
+.venv/

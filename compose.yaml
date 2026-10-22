@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8080:80"
+  traffic:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"

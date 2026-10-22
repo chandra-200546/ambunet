@@ -1,5 +1,13 @@
 # 🚑 AmbuNet — AI-Driven Adaptive Emergency Response Ecosystem
 
+## October 2026 feature audit and update
+
+See [the feature audit and local ML runbook](docs/feature-audit.md) for the authoritative status of every requested module. The full V2.0 specification is **not complete**. The Review Demo now includes a trained synthetic-data Random Forest, fair paired road-cost comparisons, segment-time playback, scenario controls, and 30-scenario exports. Earlier 24%/25% claims are not validated performance results.
+
+Run `docker compose up --build` for the optional web (8080) and Python prediction (8000) services. Docker configuration is supplied; local commands and limitations are in the audit. The Vercel website uses the exported forest directly and does not require the local Python service.
+
+Do not reset or reseed an existing database during an upgrade. The older database setup section below describes demo initialization, not a safe migration of existing records.
+
 AmbuNet is an AI-powered emergency response and hospital coordination ecosystem designed to cut ambulance response times in Bangalore using real-time predictive routing, dynamic traffic learning, hospital bed probability modeling, and intelligent pre-positioning.
 
 > ⚠️ **Academic Prototype Notice**: This application is an academic prototype for demonstration and simulation purposes — not for real emergencies. In a real medical emergency in India, call **108** or **112**.

@@ -1,5 +1,11 @@
 # AmbuNet V2.0 Architecture Notes
 
+## 2026-10-22 correction
+
+The [feature audit](feature-audit.md) supersedes earlier completion claims below. Routing selects paths using distance or exported Random Forest predictions; evaluation uses the same per-road seeded synthetic demand. No automatic congestion discount is applied to AmbuNet. Response means arrival at the incident, with hospital transport measured separately. Segment playback uses travel durations and modeled signal waits. Minimum phase (10s), yellow (3s), and all-red (2s) are explicit synthetic assumptions, not measured intersection schedules.
+
+`ml/train.py` fits and evaluates a Random Forest and writes a joblib model plus JSON tree export. `ml/app.py` serves local prediction and metrics endpoints. `trafficPredictor.ts` evaluates those same exported trees on Vercel. Node orchestration, SUMO, and operational security remain incomplete.
+
 ## Current Repository Audit
 
 AmbuNet is currently a Vite + React + TypeScript application with Tailwind CSS, Leaflet maps, Recharts analytics, Supabase integration, and deterministic client-side AI modules.

@@ -90,7 +90,7 @@ export const AmbuNetMap: React.FC<AmbuNetMapProps> = ({
   onLocationSelect,
   selectableLocation = false,
   selectedLocation,
-  center = [37.7749, -122.4194], // San Francisco default
+  center = [12.936, 77.625], // Bengaluru
   zoom = 13,
   className = 'h-[500px] w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-800',
   showControls = true

@@ -41,7 +41,7 @@ export const AnalyticsDashboard: React.FC = () => {
 
   const [numSimEmergencies, setNumSimEmergencies] = useState<number>(200);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const [latestRun, setLatestRun] = useState<SimulationRun | null>(simulationRuns[0] || null);
+  const [latestRun, setLatestRun] = useState<SimulationRun | null>(simulationRuns.find(run => run.config?.mode === 'Synthetic paired graph experiments v2') || null);
 
   const handleRunSimulation = async () => {
     setIsSimulating(true);
@@ -58,7 +58,7 @@ export const AnalyticsDashboard: React.FC = () => {
     const csvRows = [
       ['Metric', 'Baseline Dispatch', 'AmbuNet Adaptive Dispatch', 'Difference'],
       ['Average Response Time (sec)', latestRun.baseline_avg_sec, latestRun.adaptive_avg_sec, `${latestRun.baseline_avg_sec - latestRun.adaptive_avg_sec} sec faster`],
-      ['Median Response Time (sec)', Math.round(latestRun.baseline_avg_sec * 0.92), Math.round(latestRun.adaptive_avg_sec * 0.90), '-'],
+
       ['90th Percentile P90 (sec)', latestRun.baseline_p90_sec, latestRun.adaptive_p90_sec, `${latestRun.baseline_p90_sec - latestRun.adaptive_p90_sec} sec faster`],
       ['Measured Improvement %', '0.0%', `${latestRun.improvement_pct}%`, `Target 25% | Measured ${latestRun.improvement_pct}%`]
     ];
@@ -82,15 +82,7 @@ export const AnalyticsDashboard: React.FC = () => {
     { zone: 'KR Puram', avgTimeMin: 9.1, target: 10.0 },
   ];
 
-  const emergencyTypeCounts: Record<string, number> = {
-    cardiac: 34,
-    accident: 48,
-    burn: 14,
-    maternity: 22,
-    respiratory: 29,
-    stroke: 19,
-    other: 14
-  };
+  const emergencyTypeCounts: Record<string, number> = {};
 
   emergencies.forEach(em => {
     emergencyTypeCounts[em.emergency_type] = (emergencyTypeCounts[em.emergency_type] || 0) + 1;
@@ -114,7 +106,7 @@ export const AnalyticsDashboard: React.FC = () => {
     };
   });
 
-  const measuredValue = latestRun ? latestRun.improvement_pct : 26.4;
+  const measuredValue = latestRun ? latestRun.improvement_pct : null;
 
   return (
     <div className="space-y-6">
@@ -128,13 +120,13 @@ export const AnalyticsDashboard: React.FC = () => {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-black text-emerald-400 font-mono">
-              Measured {measuredValue}%
+              {measuredValue === null ? 'Not measured' : `Measured ${measuredValue}%`}
             </span>
           </div>
           <div className="mt-2 inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-xl text-xs font-bold text-red-300">
             <span>Target: 25.0%</span>
             <span className="text-slate-500">|</span>
-            <span className="text-emerald-400">Measured: {measuredValue}%</span>
+            <span className="text-emerald-400">{measuredValue === null ? 'Not measured' : `Measured: ${measuredValue}%`}</span>
           </div>
         </div>
 
@@ -182,7 +174,7 @@ export const AnalyticsDashboard: React.FC = () => {
               <Zap className="w-5 h-5 text-amber-400" />
               <h3 className="text-lg font-black text-white">Simulation & Benchmark Module</h3>
               <span className="bg-purple-500/20 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
-                Synthetic OSRM Matrix
+                Synthetic Road Graph
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
@@ -233,7 +225,7 @@ export const AnalyticsDashboard: React.FC = () => {
                 <p className="text-2xl font-black text-rose-400 font-mono mt-1">
                   {Math.floor(latestRun.baseline_avg_sec / 60)}m {latestRun.baseline_avg_sec % 60}s
                 </p>
-                <span className="text-[10px] text-slate-500">Nearest Straight-Line Dispatch</span>
+                <span className="text-[10px] text-slate-500">Shortest Road-Distance Dispatch</span>
               </div>
 
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center">
@@ -241,7 +233,7 @@ export const AnalyticsDashboard: React.FC = () => {
                 <p className="text-2xl font-black text-emerald-400 font-mono mt-1">
                   {Math.floor(latestRun.adaptive_avg_sec / 60)}m {latestRun.adaptive_avg_sec % 60}s
                 </p>
-                <span className="text-[10px] text-slate-500">AI Traffic + Bed Probability</span>
+                <span className="text-[10px] text-slate-500">Predicted Road Costs + Simulated Priority</span>
               </div>
 
               <div className="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/30 text-center">
@@ -277,20 +269,15 @@ export const AnalyticsDashboard: React.FC = () => {
                     <td className="py-3 px-3 text-slate-200">{latestRun.adaptive_p90_sec} sec</td>
                     <td className="py-3 px-3 text-right font-bold text-emerald-400">-{latestRun.baseline_p90_sec - latestRun.adaptive_p90_sec} sec</td>
                   </tr>
-                  <tr>
-                    <td className="py-3 px-3 font-sans font-bold text-slate-200">P1 Critical Target (&lt;8 min) Compliance</td>
-                    <td className="py-3 px-3 text-slate-400">68.5%</td>
-                    <td className="py-3 px-3 text-emerald-400">91.2%</td>
-                    <td className="py-3 px-3 text-right font-bold text-emerald-400">+22.7%</td>
-                  </tr>
+
                 </tbody>
               </table>
             </div>
 
             {/* Mandatory Disclaimer Note */}
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-              <span>📌 <strong>Simulation Method:</strong> Ground truth traffic noise model evaluated on {latestRun.num_emergencies} synthetic Bangalore emergencies using OSRM duration table matrices.</span>
-              <span className="text-slate-500 italic">Synthetic data + public OSRM; simulation-based results.</span>
+              <span>📌 <strong>Simulation Method:</strong> Paired graph experiment evaluated on {latestRun.num_emergencies} synthetic Bangalore emergencies using identical seeded road demand.</span>
+              <span className="text-slate-500 italic">Synthetic graph; simulation-based results.</span>
             </div>
           </div>
         ) : (
@@ -306,7 +293,7 @@ export const AnalyticsDashboard: React.FC = () => {
         {/* Response Time by Zone */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl">
           <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-4">
-            <Clock className="w-4 h-4 text-emerald-400" /> Avg Response Time by Bangalore Zone (mins)
+            <Clock className="w-4 h-4 text-emerald-400" /> Illustrative Zone Data (mins)
           </h4>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -314,7 +301,7 @@ export const AnalyticsDashboard: React.FC = () => {
                 <XAxis dataKey="zone" stroke="#64748b" fontSize={10} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={10} tickLine={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px' }} />
-                <Bar dataKey="avgTimeMin" name="Actual (mins)" fill="#10B981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="avgTimeMin" name="Illustrative (mins)" fill="#10B981" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="target" name="Target (mins)" fill="#334155" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -324,7 +311,7 @@ export const AnalyticsDashboard: React.FC = () => {
         {/* Incident Type Breakdown */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl">
           <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-4">
-            <Activity className="w-4 h-4 text-red-400" /> Incidents by Category
+            <Activity className="w-4 h-4 text-red-400" /> Current Incidents by Category
           </h4>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">

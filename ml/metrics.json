@@ -1,0 +1,11 @@
+{
+  "source": "synthetic",
+  "rows": 2400,
+  "split": "chronological 60/20/20",
+  "validation_mae_sec": 64.61864770764022,
+  "test_mae_sec": 61.904464338619135,
+  "test_rmse_sec": 86.6763005998447,
+  "test_mape_pct": 10.592283390256863,
+  "batch_latency_ms_per_row": 0.02058645833310872,
+  "seed": 42
+}

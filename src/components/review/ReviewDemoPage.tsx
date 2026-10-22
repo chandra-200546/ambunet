@@ -38,6 +38,8 @@ import {
   runReviewDemoScenario,
 } from '../../simulation/reviewDemoEngine';
 import { Ambulance as AmbulanceType, Emergency } from '../../types';
+import { advanceClock, positionAt, runExperiments } from '../../simulation/playback';
+import { trafficModelMetrics } from '../../simulation/trafficPredictor';
 
 const demoSteps = [
   'Load a seeded Koramangala emergency scenario',
@@ -76,22 +78,25 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
   const [result, setResult] = useState<DemoRunResult>(() => runReviewDemoScenario(DEFAULT_REVIEW_DEMO_CONFIG));
   const [stepIndex, setStepIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [speed, setSpeed] = useState(10);
+  const [experiments, setExperiments] = useState<ReturnType<typeof runExperiments> | null>(null);
   const [activeRoute, setActiveRoute] = useState<'baseline' | 'optimized'>('optimized');
 
   const activeCoordinates = activeRoute === 'baseline' ? result.baseline.coordinates : result.optimized.coordinates;
   const activeRouteResult = activeRoute === 'baseline' ? result.baseline : result.optimized;
+  const progress = activeRouteResult.travelTimeSec ? elapsed / activeRouteResult.travelTimeSec : 1;
+  const playback = positionAt(activeRouteResult, elapsed);
 
   const movingAmbulance: AmbulanceType = useMemo(() => {
-    const routeIndex = Math.min(activeCoordinates.length - 1, Math.floor(progress * (activeCoordinates.length - 1)));
-    const position = activeCoordinates[routeIndex] || activeCoordinates[0];
+    const position = playback.position;
     return {
-      ...result.selectedAmbulance,
+      ...(activeRoute === 'baseline' ? result.baselineAmbulance : result.selectedAmbulance),
       current_lat: position?.[0] || result.selectedAmbulance.current_lat,
       current_lng: position?.[1] || result.selectedAmbulance.current_lng,
       status: progress >= 1 ? 'at_hospital' : 'en_route_to_patient',
     };
-  }, [activeCoordinates, progress, result.selectedAmbulance]);
+  }, [activeRoute, elapsed, result]);
 
   const demoEmergency: Emergency = {
     id: 'review-demo-e1',
@@ -114,8 +119,8 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
   const comparisonChartData = [
     {
       metric: 'Response',
-      Baseline: Math.round(result.baseline.travelTimeSec / 60),
-      AmbuNet: Math.round(result.optimized.travelTimeSec / 60),
+      Baseline: Number((result.baselineResponseSec / 60).toFixed(2)),
+      AmbuNet: Number((result.optimizedResponseSec / 60).toFixed(2)),
     },
     {
       metric: 'Signal Wait',
@@ -131,25 +136,20 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
 
   useEffect(() => {
     if (!isRunning) return;
-    const timer = window.setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 1) {
-          setIsRunning(false);
-          setStepIndex(demoSteps.length - 1);
-          return 1;
-        }
-        return Math.min(1, prev + 0.06);
-      });
-      setStepIndex(prev => Math.min(demoSteps.length - 1, prev + 1));
-    }, 700);
+    const timer = window.setInterval(() => setElapsed(prev => advanceClock(prev, speed / 10, activeRouteResult.travelTimeSec, true)), 100);
     return () => window.clearInterval(timer);
-  }, [isRunning]);
+  }, [isRunning, speed, activeRouteResult.travelTimeSec]);
+
+  useEffect(() => {
+    if (elapsed >= activeRouteResult.travelTimeSec) setIsRunning(false);
+  }, [elapsed, activeRouteResult.travelTimeSec]);
 
   const rerunScenario = (nextConfig = config) => {
     const nextResult = runReviewDemoScenario(nextConfig);
     setResult(nextResult);
     setConfig(nextConfig);
-    setProgress(0);
+    setElapsed(0);
+    setExperiments(null);
     setStepIndex(0);
     setIsRunning(false);
     setActiveRoute('optimized');
@@ -170,7 +170,7 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
             <div>
               <h1 className="text-xl font-black text-white leading-tight">AmbuNet Review 2 Demo</h1>
               <p className="text-xs text-slate-400">
-                Digital twin + AI green corridor simulation using reproducible synthetic Bengaluru data
+                Synthetic Bengaluru graph simulation and route comparison
               </p>
             </div>
           </div>
@@ -183,20 +183,20 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
               <RefreshCcw className="w-4 h-4" /> Reset Demo
             </button>
             <button
-              onClick={() => setIsRunning(true)}
+              onClick={() => { if (progress >= 1) setElapsed(0); setIsRunning(true); }}
               className="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white flex items-center gap-1.5 shadow-lg shadow-red-600/20"
             >
-              <Play className="w-4 h-4" /> Run Full Demo
+              <Play className="w-4 h-4" /> {elapsed > 0 && progress < 1 ? 'Resume' : 'Start Simulation'}
             </button>
             <button
               onClick={() => {
                 setIsRunning(false);
                 setStepIndex(prev => Math.min(demoSteps.length - 1, prev + 1));
-                setProgress(prev => Math.min(1, prev + 0.09));
+                setElapsed(prev => advanceClock(prev, 10, activeRouteResult.travelTimeSec, true));
               }}
               className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5"
             >
-              <SkipForward className="w-4 h-4" /> Step-by-Step
+              <SkipForward className="w-4 h-4" /> Step 10s
             </button>
             <button
               onClick={() => setIsRunning(false)}
@@ -217,27 +217,34 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
       </header>
 
       <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <section className="border-b border-slate-700 pb-4 text-sm flex flex-wrap gap-4">
+          <strong>Traffic prediction / Random Forest</strong>
+          <span>Synthetic test MAE: {trafficModelMetrics.test_mae_sec.toFixed(1)}s</span>
+          <span>RMSE: {trafficModelMetrics.test_rmse_sec.toFixed(1)}s</span>
+          <span>MAPE: {trafficModelMetrics.test_mape_pct.toFixed(1)}%</span>
+          <span>{trafficModelMetrics.rows} observations / chronological 60-20-20 split</span>
+        </section>
         <section className="grid grid-cols-1 lg:grid-cols-[1.35fr_0.65fr] gap-6">
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-2xl space-y-4">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <h2 className="text-lg font-black text-white flex items-center gap-2">
                   <TrafficCone className="w-5 h-5 text-amber-400" />
-                  Bangalore Digital Twin Simulation Lab
+                  Bengaluru Simulation Lab
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Traffic Signal Priority - Simulation Only. Results are generated from local graph algorithms and synthetic traffic assumptions.
+                  Traffic Signal Priority - Simulation Only. Schematic network, synthetic demand, and Random Forest predictions trained on synthetic observations.
                 </p>
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setActiveRoute('baseline')}
+                  onClick={() => { setActiveRoute('baseline'); setElapsed(0); setIsRunning(false); }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${activeRoute === 'baseline' ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-950 text-slate-400 border-slate-800'}`}
                 >
                   Baseline Route
                 </button>
                 <button
-                  onClick={() => setActiveRoute('optimized')}
+                  onClick={() => { setActiveRoute('optimized'); setElapsed(0); setIsRunning(false); }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${activeRoute === 'optimized' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-950 text-slate-400 border-slate-800'}`}
                 >
                   AmbuNet Corridor
@@ -256,8 +263,21 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
               className="h-[520px] w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-800"
             />
 
+            <div className="flex flex-wrap gap-4 text-sm" role="status">
+              <span>Elapsed: {formatSeconds(elapsed)}</span><span>Remaining: {formatSeconds(Math.max(0, activeRouteResult.travelTimeSec - elapsed))}</span><span>{playback.phase}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <label>Incident<select aria-label="Incident" value={config.incidentNodeId} onChange={e => updateConfig('incidentNodeId', e.target.value)} className="block w-full bg-slate-950 border border-slate-700 p-2">{REVIEW_DEMO_NODES.map(node => <option key={node.id} value={node.id}>{node.name}</option>)}</select></label>
+              <label>Ambulance start<select aria-label="Ambulance start" value={config.startNodeId || ''} onChange={e => updateConfig('startNodeId', e.target.value || undefined)} className="block w-full bg-slate-950 border border-slate-700 p-2"><option value="">Distributed fleet</option>{REVIEW_DEMO_NODES.map(node => <option key={node.id} value={node.id}>{node.name}</option>)}</select></label>
+              <label>Destination hospital<select aria-label="Destination hospital" value={config.hospitalNodeId} onChange={e => updateConfig('hospitalNodeId', e.target.value)} className="block w-full bg-slate-950 border border-slate-700 p-2">{REVIEW_DEMO_NODES.filter(node => ['st_johns', 'nimhans', 'manipal_oar'].includes(node.id)).map(node => <option key={node.id} value={node.id}>{node.name}</option>)}</select></label>
+              <label>Ambulances: {config.ambulanceCount}<input aria-label="Ambulances" type="range" min="1" max="10" value={config.ambulanceCount} onChange={e => updateConfig('ambulanceCount', Number(e.target.value))} className="block w-full" /></label>
+              <label>Synthetic traffic demand: {config.normalVehicleCount}<input aria-label="Traffic demand" type="range" min="0" max="1000" step="10" value={config.normalVehicleCount} onChange={e => updateConfig('normalVehicleCount', Number(e.target.value))} className="block w-full" /></label>
+              <label>Simulation speed: {speed}x<input aria-label="Simulation speed" type="range" min="1" max="60" value={speed} onChange={e => setSpeed(Number(e.target.value))} className="block w-full" /></label>
+              <label>Scenario seed<input aria-label="Scenario seed" type="number" min="0" max="999999" value={config.seed} onChange={e => updateConfig('seed', Math.max(0, Math.min(999999, Math.round(Number(e.target.value)))))} className="block w-full bg-slate-950 border border-slate-700 p-2" /></label>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <select
+                aria-label="Traffic intensity"
                 value={config.trafficIntensity}
                 onChange={event => updateConfig('trafficIntensity', event.target.value as TrafficIntensity)}
                 className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-200"
@@ -267,6 +287,7 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
                 <option value="high">High traffic</option>
               </select>
               <select
+                aria-label="Weather"
                 value={config.weather}
                 onChange={event => updateConfig('weather', event.target.value as WeatherMode)}
                 className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-200"
@@ -275,6 +296,7 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
                 <option value="rain">Rain</option>
               </select>
               <select
+                aria-label="Routing method"
                 value={config.routingMethod}
                 onChange={event => updateConfig('routingMethod', event.target.value as RoutingMethod)}
                 className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-200"
@@ -299,37 +321,37 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <Gauge className="w-4 h-4 text-emerald-400" /> Measured Result
+                  <Gauge className="w-4 h-4 text-emerald-400" /> Modeled Response Time
                 </h3>
                 <span className="text-[10px] font-bold text-slate-500">Seed {config.seed}</span>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="bg-slate-950 rounded-2xl border border-slate-800 p-3">
                   <p className="text-[10px] uppercase font-bold text-slate-500">Baseline</p>
-                  <p className="text-xl font-black text-rose-400 font-mono">{formatSeconds(result.baseline.travelTimeSec)}</p>
+                  <p className="text-xl font-black text-rose-400 font-mono">{formatSeconds(result.baselineResponseSec)}</p>
                 </div>
                 <div className="bg-emerald-500/10 rounded-2xl border border-emerald-500/30 p-3">
                   <p className="text-[10px] uppercase font-bold text-emerald-400">AmbuNet</p>
-                  <p className="text-xl font-black text-emerald-300 font-mono">{formatSeconds(result.optimized.travelTimeSec)}</p>
+                  <p className="text-xl font-black text-emerald-300 font-mono">{formatSeconds(result.optimizedResponseSec)}</p>
                 </div>
               </div>
               <div className="mt-4 bg-slate-950 rounded-2xl border border-slate-800 p-4 text-center">
                 <p className="text-xs text-slate-400 font-bold uppercase">Response Time Improvement</p>
                 <p className="text-4xl font-black text-emerald-400 font-mono">{result.responseImprovementPct}%</p>
-                <p className="text-[11px] text-slate-500">Computed from the same scenario, not hardcoded.</p>
+                <p className="text-[11px] text-slate-500">Arrival at patient; identical road demand. Negative values mean slower.</p>
               </div>
             </div>
 
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl">
               <h3 className="text-sm font-black text-white mb-3 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-sky-400" /> Demo Progress
+                <ShieldCheck className="w-4 h-4 text-sky-400" /> Mission Status
               </h3>
               <div className="space-y-2">
-                {demoSteps.map((step, index) => (
+                {['Scenario loaded', 'Traveling to patient', 'Transporting to hospital', 'Mission complete'].map((step, index) => (
                   <div
                     key={step}
                     className={`flex items-center gap-2 text-xs rounded-xl px-3 py-2 border ${
-                      index <= stepIndex
+                      index === (elapsed >= activeRouteResult.travelTimeSec ? 3 : elapsed >= (activeRoute === 'baseline' ? result.baselineResponseSec : result.optimizedResponseSec) ? 2 : elapsed > 0 ? 1 : 0)
                         ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-200'
                         : 'bg-slate-950 border-slate-800 text-slate-500'
                     }`}
@@ -343,6 +365,11 @@ export const ReviewDemoPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackT
               </div>
             </div>
           </div>
+        </section>
+
+        <section className="border-y border-slate-700 py-5 space-y-3">
+          <button onClick={() => setExperiments(runExperiments(30, config))} className="flex gap-2 items-center px-3 py-2 bg-red-600 rounded-lg"><GitCompare size={16} /> Compare 30 Scenarios</button>
+          {experiments && <><p>30 paired synthetic scenarios. Mean response: {experiments.baselineMean.toFixed(1)}s baseline / {experiments.optimizedMean.toFixed(1)}s AmbuNet. P90: {experiments.baselineP90}s / {experiments.optimizedP90}s. Difference: {experiments.improvement.toFixed(1)}%.</p><button className="flex gap-2 items-center" onClick={() => { const csv = ['seed,incident,baseline_sec,ambunet_sec,computation_ms', ...experiments.rows.map(row => [row.seed, row.incident, row.baseline, row.optimized, row.computationMs].join(','))].join('\n'); const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = 'ambunet-paired-experiments.csv'; a.click(); URL.revokeObjectURL(url); }}><Download size={16} /> Export Experiment Rows</button></>}
         </section>
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">

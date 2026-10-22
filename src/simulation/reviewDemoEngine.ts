@@ -1,5 +1,6 @@
 import { Ambulance, Hospital, LocationCoords } from '../types';
 import { INITIAL_AMBULANCES, INITIAL_HOSPITALS } from '../lib/mockData';
+import { predictTravelSeconds } from './trafficPredictor';
 
 export type RoutingMethod = 'dijkstra' | 'astar' | 'traffic-aware';
 export type TrafficIntensity = 'low' | 'medium' | 'high';
@@ -23,6 +24,7 @@ export interface RoadEdge {
 }
 
 export interface RouteResult {
+  segments: Array<{ from: [number, number]; to: [number, number]; driveSec: number; waitSec: number }>;
   nodeIds: string[];
   coordinates: [number, number][];
   distanceKm: number;
@@ -42,6 +44,7 @@ export interface SignalPriorityEvent {
 }
 
 export interface DemoScenarioConfig {
+  startNodeId?: string;
   incidentNodeId: string;
   hospitalNodeId: string;
   trafficIntensity: TrafficIntensity;
@@ -63,6 +66,9 @@ export interface CandidateRoute {
 }
 
 export interface DemoRunResult {
+  baselineResponseSec: number;
+  optimizedResponseSec: number;
+  baselineAmbulance: Ambulance;
   config: DemoScenarioConfig;
   incident: RoadNode;
   hospital: Hospital;
@@ -169,26 +175,30 @@ function routeEdgeMap() {
   return map;
 }
 
+function trafficFactor(edge: RoadEdge, config: DemoScenarioConfig) {
+  // Stable per-road demand variation; both algorithms see identical conditions.
+  const hash = [...[edge.from, edge.to].sort().join(':')].reduce((n, c) => Math.imul(n ^ c.charCodeAt(0), 16777619), config.seed);
+  return multiplierFor(config) * (0.85 + (Math.abs(hash) % 301) / 1000);
+}
+
 function edgeCost(edge: RoadEdge, method: RoutingMethod, config: DemoScenarioConfig) {
   const freeFlowSec = (edge.distanceKm / edge.freeFlowKmph) * 3600;
-  if (method === 'dijkstra') {
-    return freeFlowSec + edge.signalDelaySec;
+  if (method !== 'traffic-aware') {
+    return edge.distanceKm;
   }
 
-  const rawCongestionDelay = freeFlowSec * (edge.congestion * multiplierFor(config) - 1);
-  const congestionDelay =
-    method === 'traffic-aware'
-      ? Math.max(0, rawCongestionDelay * 0.72)
-      : Math.max(0, rawCongestionDelay);
+  const congestionDelay = predictTravelSeconds(freeFlowSec, edge.congestion, config.trafficIntensity, config.weather === 'rain', config.normalVehicleCount) - freeFlowSec;
   const priorityDelay =
     config.signalPriorityEnabled && method === 'traffic-aware'
-      ? Math.max(8, Math.round(edge.signalDelaySec * 0.35))
+      ? Math.min(edge.signalDelaySec, 10 + 3 + 2)
       : edge.signalDelaySec;
 
   return freeFlowSec + Math.max(0, congestionDelay) + priorityDelay;
 }
 
 function shortestPath(startId: string, endId: string, method: RoutingMethod, config: DemoScenarioConfig) {
+  if (!nodeById.has(startId) || !nodeById.has(endId)) throw new Error('Unknown road node');
+  const heuristicScale = Math.min(...REVIEW_DEMO_EDGES.map(edge => edge.distanceKm / haversineKm(nodeById.get(edge.from)!, nodeById.get(edge.to)!)));
   const graph = adjacency();
   const distances = new Map<string, number>();
   const previous = new Map<string, string | null>();
@@ -207,7 +217,7 @@ function shortestPath(startId: string, endId: string, method: RoutingMethod, con
       const distance = distances.get(nodeId) ?? Number.POSITIVE_INFINITY;
       const heuristic =
         method === 'astar'
-          ? haversineKm(nodeById.get(nodeId)!, nodeById.get(endId)!) * 105
+          ? haversineKm(nodeById.get(nodeId)!, nodeById.get(endId)!) * heuristicScale
           : 0;
       if (distance + heuristic < bestScore) {
         bestScore = distance + heuristic;
@@ -236,7 +246,7 @@ function shortestPath(startId: string, endId: string, method: RoutingMethod, con
   }
 
   if (path[0] !== startId) {
-    return [startId, endId];
+    throw new Error('No connected route');
   }
   return path;
 }
@@ -244,7 +254,7 @@ function shortestPath(startId: string, endId: string, method: RoutingMethod, con
 export function calculateRoute(startId: string, endId: string, method: RoutingMethod, config: DemoScenarioConfig): RouteResult {
   const path = shortestPath(startId, endId, method, config);
   const edgeMap = routeEdgeMap();
-  const trafficMultiplier = multiplierFor(config);
+  const segments: RouteResult['segments'] = [];
   let distanceKm = 0;
   let travelTimeSec = 0;
   let signalWaitSec = 0;
@@ -265,17 +275,19 @@ export function calculateRoute(startId: string, endId: string, method: RoutingMe
     }
 
     const freeFlowSec = (edge.distanceKm / edge.freeFlowKmph) * 3600;
-    const rawCongestionSec = Math.max(0, freeFlowSec * (edge.congestion * trafficMultiplier - 1));
-    const congestionSec = method === 'traffic-aware' ? rawCongestionSec * 0.72 : rawCongestionSec;
+    const congestionSec = Math.max(0, freeFlowSec * (edge.congestion * trafficFactor(edge, config) - 1));
     const priorityDelay =
       config.signalPriorityEnabled && method === 'traffic-aware'
-        ? Math.max(8, Math.round(edge.signalDelaySec * 0.35))
+        ? Math.min(edge.signalDelaySec, 10 + 3 + 2)
         : edge.signalDelaySec;
 
     distanceKm += edge.distanceKm;
     congestionDelaySec += congestionSec;
     signalWaitSec += priorityDelay;
     travelTimeSec += freeFlowSec + congestionSec + priorityDelay;
+    const from = nodeById.get(nodeId)!;
+    const to = nodeById.get(nextId)!;
+    segments.push({ from: [from.lat, from.lng], to: [to.lat, to.lng], driveSec: freeFlowSec + congestionSec, waitSec: priorityDelay });
 
     if (config.signalPriorityEnabled && method === 'traffic-aware' && edge.controlledIntersection) {
       priorityEvents.push({
@@ -283,19 +295,20 @@ export function calculateRoute(startId: string, endId: string, method: RoutingMe
         etaSec: Math.round(travelTimeSec),
         normalDelaySec: edge.signalDelaySec,
         priorityDelaySec: priorityDelay,
-        action: 'Requested protected emergency phase, enforced clearance, then restored normal program.',
+        action: 'Synthetic timing: 10s minimum phase, 3s yellow, 2s all-red, priority crossing, restore.',
       });
     }
   });
 
   return {
+    segments,
     nodeIds: path,
     coordinates: path.map(nodeId => {
       const node = nodeById.get(nodeId)!;
       return [node.lat, node.lng] as [number, number];
     }),
     distanceKm: Number(distanceKm.toFixed(2)),
-    travelTimeSec: Math.round(travelTimeSec),
+    travelTimeSec: Math.ceil(travelTimeSec),
     signalWaitSec: Math.round(signalWaitSec),
     congestionDelaySec: Math.round(congestionDelaySec),
     priorityEvents,
@@ -322,20 +335,29 @@ function routeFromAmbulance(ambulance: Ambulance, incidentNodeId: string, method
   const startNode = nearestNode({ lat: ambulance.current_lat, lng: ambulance.current_lng });
   const route = calculateRoute(startNode.id, incidentNodeId, method, config);
   const snapPenaltySec = Math.round(haversineKm({ lat: ambulance.current_lat, lng: ambulance.current_lng }, startNode) * 95);
-  return { ...route, travelTimeSec: route.travelTimeSec + snapPenaltySec };
+  const connectorKm = haversineKm({ lat: ambulance.current_lat, lng: ambulance.current_lng }, startNode);
+  return { ...route, distanceKm: route.distanceKm + connectorKm, coordinates: [[ambulance.current_lat, ambulance.current_lng] as [number, number], ...route.coordinates], segments: [{ from: [ambulance.current_lat, ambulance.current_lng] as [number, number], to: [startNode.lat, startNode.lng] as [number, number], driveSec: snapPenaltySec, waitSec: 0 }, ...route.segments], travelTimeSec: route.travelTimeSec + snapPenaltySec };
 }
 
 export function runReviewDemoScenario(config: DemoScenarioConfig = DEFAULT_REVIEW_DEMO_CONFIG): DemoRunResult {
+  if (!Number.isInteger(config.ambulanceCount) || config.ambulanceCount < 1 || config.ambulanceCount > 10) throw new Error('Fleet size must be 1 to 10');
+  if (!Number.isFinite(config.normalVehicleCount) || config.normalVehicleCount < 0 || config.normalVehicleCount > 1000) throw new Error('Vehicle demand must be 0 to 1000');
+  if (!Number.isInteger(config.seed)) throw new Error('Seed must be an integer');
+  if (!nodeById.has(config.incidentNodeId) || !nodeById.has(config.hospitalNodeId)) throw new Error('Invalid scenario location');
   const started = performance.now();
   const incident = nodeById.get(config.incidentNodeId) || nodeById.get(DEFAULT_REVIEW_DEMO_CONFIG.incidentNodeId)!;
   const hospital = hospitalFromNode(config.hospitalNodeId);
   const candidateAmbulances = INITIAL_AMBULANCES
     .filter(ambulance => ambulance.status === 'idle')
-    .slice(0, config.ambulanceCount);
+    .slice(0, config.ambulanceCount).map((ambulance, index) => {
+      const node = config.startNodeId ? nodeById.get(config.startNodeId) : REVIEW_DEMO_NODES[(index * 3 + 2) % REVIEW_DEMO_NODES.length];
+      if (!node) throw new Error('Invalid ambulance starting node');
+      return { ...ambulance, current_lat: node.lat, current_lng: node.lng };
+    });
 
   const ambulanceComparisons = candidateAmbulances.map(ambulance => {
     const baselineEta = routeFromAmbulance(ambulance, incident.id, 'dijkstra', { ...config, signalPriorityEnabled: false });
-    const optimizedEta = routeFromAmbulance(ambulance, incident.id, 'traffic-aware', config);
+    const optimizedEta = routeFromAmbulance(ambulance, incident.id, config.routingMethod, config);
     return {
       vehicleNumber: ambulance.vehicle_number,
       baselineEtaSec: baselineEta.travelTimeSec,
@@ -350,7 +372,8 @@ export function runReviewDemoScenario(config: DemoScenarioConfig = DEFAULT_REVIE
   const selectedAmbulance = candidateAmbulances.find(ambulance => ambulance.vehicle_number === selectedComparison.vehicleNumber) || candidateAmbulances[0];
   const selectedStartNode = nearestNode({ lat: selectedAmbulance.current_lat, lng: selectedAmbulance.current_lng });
 
-  const baselineToPatient = calculateRoute(selectedStartNode.id, incident.id, 'dijkstra', {
+  const baselineAmbulance = [...candidateAmbulances].sort((a, b) => routeFromAmbulance(a, incident.id, 'dijkstra', config).distanceKm - routeFromAmbulance(b, incident.id, 'dijkstra', config).distanceKm)[0];
+  const baselineToPatient = routeFromAmbulance(baselineAmbulance, incident.id, 'dijkstra', {
     ...config,
     signalPriorityEnabled: false,
     routingMethod: 'dijkstra',
@@ -360,11 +383,12 @@ export function runReviewDemoScenario(config: DemoScenarioConfig = DEFAULT_REVIE
     signalPriorityEnabled: false,
     routingMethod: 'dijkstra',
   });
-  const optimizedToPatient = calculateRoute(selectedStartNode.id, incident.id, config.routingMethod, config);
+  const optimizedToPatient = routeFromAmbulance(selectedAmbulance, incident.id, config.routingMethod, config);
   const optimizedToHospital = calculateRoute(incident.id, config.hospitalNodeId, config.routingMethod, config);
 
   const baseline: RouteResult = {
     ...baselineToHospital,
+    segments: [...baselineToPatient.segments, ...baselineToHospital.segments],
     nodeIds: [...baselineToPatient.nodeIds, ...baselineToHospital.nodeIds.slice(1)],
     coordinates: [...baselineToPatient.coordinates, ...baselineToHospital.coordinates.slice(1)],
     distanceKm: Number((baselineToPatient.distanceKm + baselineToHospital.distanceKm).toFixed(2)),
@@ -377,13 +401,14 @@ export function runReviewDemoScenario(config: DemoScenarioConfig = DEFAULT_REVIE
 
   const optimized: RouteResult = {
     ...optimizedToHospital,
+    segments: [...optimizedToPatient.segments, ...optimizedToHospital.segments],
     nodeIds: [...optimizedToPatient.nodeIds, ...optimizedToHospital.nodeIds.slice(1)],
     coordinates: [...optimizedToPatient.coordinates, ...optimizedToHospital.coordinates.slice(1)],
     distanceKm: Number((optimizedToPatient.distanceKm + optimizedToHospital.distanceKm).toFixed(2)),
     travelTimeSec: optimizedToPatient.travelTimeSec + optimizedToHospital.travelTimeSec,
     signalWaitSec: optimizedToPatient.signalWaitSec + optimizedToHospital.signalWaitSec,
     congestionDelaySec: optimizedToPatient.congestionDelaySec + optimizedToHospital.congestionDelaySec,
-    priorityEvents: [...optimizedToPatient.priorityEvents, ...optimizedToHospital.priorityEvents],
+    priorityEvents: [...optimizedToPatient.priorityEvents, ...optimizedToHospital.priorityEvents.map(event => ({ ...event, etaSec: event.etaSec + optimizedToPatient.travelTimeSec }))],
     method: config.routingMethod,
   };
 
@@ -402,10 +427,13 @@ export function runReviewDemoScenario(config: DemoScenarioConfig = DEFAULT_REVIE
     };
   });
 
-  const responseImprovementPct = Number((((baseline.travelTimeSec - optimized.travelTimeSec) / baseline.travelTimeSec) * 100).toFixed(1));
+  const responseImprovementPct = baselineToPatient.travelTimeSec > 0 ? Number((((baselineToPatient.travelTimeSec - optimizedToPatient.travelTimeSec) / baselineToPatient.travelTimeSec) * 100).toFixed(1)) : 0;
   const computationTimeMs = Number((performance.now() - started).toFixed(2));
 
   return {
+    baselineResponseSec: baselineToPatient.travelTimeSec,
+    optimizedResponseSec: optimizedToPatient.travelTimeSec,
+    baselineAmbulance,
     config,
     incident,
     hospital,
@@ -420,7 +448,7 @@ export function runReviewDemoScenario(config: DemoScenarioConfig = DEFAULT_REVIE
     explanation: [
       `${selectedAmbulance.vehicle_number} selected because its optimized ETA to the incident is ${selectedComparison.optimizedEtaSec} seconds, the best among ${candidateAmbulances.length} available units.`,
       `The optimized corridor uses ${optimized.method} routing with ${config.trafficIntensity} traffic, ${config.weather} weather, and ${config.normalVehicleCount} simulated normal vehicles.`,
-      `Signal priority reduced corridor signal waiting from ${baseline.signalWaitSec} seconds to ${optimized.signalWaitSec} seconds using protected simulated phase requests.`,
+      `Modeled signal waiting: baseline ${baseline.signalWaitSec}s; selected method ${optimized.signalWaitSec}s. Congestion costs are identical for the same road and seed.`,
       `Selected hospital: ${hospital.name}, matched from the configured hospital node with emergency capability and available seeded bed capacity.`,
     ],
   };
@@ -429,7 +457,10 @@ export function runReviewDemoScenario(config: DemoScenarioConfig = DEFAULT_REVIE
 export function exportDemoResultCsv(result: DemoRunResult) {
   return [
     ['Metric', 'Conventional Baseline', 'AmbuNet Optimized'],
-    ['Response time seconds', result.baseline.travelTimeSec, result.optimized.travelTimeSec],
+    ['Response time seconds', result.baselineResponseSec, result.optimizedResponseSec],
+    ['Total mission seconds', result.baseline.travelTimeSec, result.optimized.travelTimeSec],
+    ['Seed', result.config.seed, result.config.seed],
+    ['Data source', 'Synthetic schematic graph', 'Synthetic schematic graph'],
     ['Travel distance km', result.baseline.distanceKm, result.optimized.distanceKm],
     ['Signal waiting seconds', result.baseline.signalWaitSec, result.optimized.signalWaitSec],
     ['Congestion delay seconds', result.baseline.congestionDelaySec, result.optimized.congestionDelaySec],

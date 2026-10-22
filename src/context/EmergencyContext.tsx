@@ -28,6 +28,7 @@ import { soundManager } from '../lib/audio';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { createDatabaseId, isUuid, logSupabaseError, toDatabaseUuid } from '../lib/dbUtils';
 import { useAuth } from './AuthContext';
+import { runExperiments } from '../simulation/playback';
 
 // AI Engines
 import { evaluateTriage } from '../ai/triage';
@@ -849,54 +850,12 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Benchmark Simulation Execution Engine (Baseline vs AmbuNet Adaptive)
   const runSimulationBenchmark = async (numEmergencies = 200): Promise<SimulationRun> => {
-    // 1. Fetch zone distance matrix via OSRM table API (with caching)
-    const zoneCoords = BANGALORE_ZONES.map(z => ({ lat: z.center_lat, lng: z.center_lng }));
-    const durationMatrix = await getOSRMTableMatrix(zoneCoords);
-
-    // 2. Generate N synthetic emergencies with peak time distribution
-    const baselineResults: number[] = [];
-    const adaptiveResults: number[] = [];
-    const p1Baseline: number[] = [];
-    const p1Adaptive: number[] = [];
-
-    for (let i = 0; i < numEmergencies; i++) {
-      const fromZoneIdx = Math.floor(Math.random() * BANGALORE_ZONES.length);
-      const toZoneIdx = Math.floor(Math.random() * BANGALORE_ZONES.length);
-      const baseSec = durationMatrix[fromZoneIdx][toZoneIdx] || 720;
-
-      // Hidden ground truth traffic model with noise
-      const hour = (8 + Math.floor(Math.random() * 12)) % 24;
-      const isPeak = (hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20);
-      const trafficNoise = 1.0 + (Math.random() - 0.5) * 0.25;
-      const trueMultiplier = isPeak ? 1.95 * trafficNoise : 1.2 * trafficNoise;
-
-      const trueTravelTimeSec = Math.round(baseSec * trueMultiplier);
-      const isP1 = Math.random() < 0.35;
-
-      // Baseline dispatch: raw straight-line nearest dispatch, no traffic pre-positioning
-      const baselineTravelSec = Math.round(trueTravelTimeSec * (1.20 + (Math.random() - 0.5) * 0.15));
-      // Adaptive dispatch: AI score optimization + pre-positioning cuts latency
-      const adaptiveTravelSec = Math.round(trueTravelTimeSec * (0.88 + (Math.random() - 0.5) * 0.10));
-
-      baselineResults.push(baselineTravelSec);
-      adaptiveResults.push(adaptiveTravelSec);
-
-      if (isP1) {
-        p1Baseline.push(baselineTravelSec);
-        p1Adaptive.push(adaptiveTravelSec);
-      }
-    }
-
-    const baselineAvg = Math.round(baselineResults.reduce((a, b) => a + b, 0) / numEmergencies);
-    const adaptiveAvg = Math.round(adaptiveResults.reduce((a, b) => a + b, 0) / numEmergencies);
-
-    const sortedBaseline = [...baselineResults].sort((a, b) => a - b);
-    const sortedAdaptive = [...adaptiveResults].sort((a, b) => a - b);
-    const baselineP90 = sortedBaseline[Math.floor(numEmergencies * 0.9)];
-    const adaptiveP90 = sortedAdaptive[Math.floor(numEmergencies * 0.9)];
-
-    // Improvement % measured dynamically
-    const improvementPct = Number((((baselineAvg - adaptiveAvg) / baselineAvg) * 100).toFixed(1));
+    const experiment = runExperiments(numEmergencies);
+    const baselineAvg = Math.round(experiment.baselineMean);
+    const adaptiveAvg = Math.round(experiment.optimizedMean);
+    const baselineP90 = experiment.baselineP90;
+    const adaptiveP90 = experiment.optimizedP90;
+    const improvementPct = Number(experiment.improvement.toFixed(1));
 
     const newRun: SimulationRun = {
       id: createDatabaseId(),
@@ -907,7 +866,7 @@ export const EmergencyProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       baseline_p90_sec: baselineP90,
       adaptive_p90_sec: adaptiveP90,
       improvement_pct: improvementPct,
-      config: { fleetSize: ambulances.length, zones: BANGALORE_ZONES.length, mode: 'Public OSRM Table Matrix' }
+      config: { fleetSize: 4, mode: 'Synthetic paired graph experiments v2', seed: 42, rows: experiment.rows }
     };
 
     setSimulationRuns(prev => [newRun, ...prev]);
