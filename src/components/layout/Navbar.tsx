@@ -84,6 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Action Icons & Role Switcher */}
         <div className="flex items-center gap-2.5">
+          <a href="/review-demo" className="px-3 py-2 rounded-lg bg-red-600 text-white text-xs font-bold">Demo</a>
           {/* Audio siren mute button */}
           <button
             onClick={handleToggleMute}

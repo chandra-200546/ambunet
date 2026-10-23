@@ -25,7 +25,7 @@ import { DispatchControlPanel } from './components/admin/DispatchControlPanel';
 import { FleetHospitalTable } from './components/admin/FleetHospitalTable';
 import { AnalyticsDashboard } from './components/admin/AnalyticsDashboard';
 import { AmbuNetMap } from './components/map/AmbuNetMap';
-import { ReviewDemoPage } from './components/review/ReviewDemoPage';
+import { GuidedDemoPage } from './components/review/GuidedDemoPage';
 
 // Public Tracking Component
 import { PublicTrackEmergency } from './components/public/PublicTrackEmergency';
@@ -93,7 +93,7 @@ export const App: React.FC = () => {
 
   if (isReviewDemoRoute) {
     return (
-      <ReviewDemoPage
+      <GuidedDemoPage
         onBackToApp={() => {
           window.history.pushState({}, '', '/');
           setIsReviewDemoRoute(false);
